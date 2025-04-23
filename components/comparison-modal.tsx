@@ -10,17 +10,14 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Check, X } from "lucide-react";
+import type { ComparisonModalProps, RowData } from "@/types";
 
-interface ComparisonModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  sourceData: any;
-  targetData: any;
-  sourceTitle: string;
-  targetTitle: string;
-  sourceColor: string;
-  targetColor: string;
-}
+type ComparisonRow = {
+  key: string;
+  source?: RowData;
+  target?: RowData;
+  different: boolean;
+};
 
 export default function ComparisonModal({
   isOpen,
@@ -58,17 +55,17 @@ export default function ComparisonModal({
     }
   };
 
-  const compareRows = () => {
-    const allRows: any[] = [];
-    const sourceRowMap = new Map();
-    const targetRowMap = new Map();
+  const compareRows = (): ComparisonRow[] => {
+    const allRows: ComparisonRow[] = [];
+    const sourceRowMap = new Map<string, RowData>();
+    const targetRowMap = new Map<string, RowData>();
 
-    sourceData.rows.forEach((row: any) => {
+    sourceData.rows.forEach((row: RowData) => {
       const key = row.wagonNumber || row.id;
       sourceRowMap.set(key, row);
     });
 
-    targetData.rows.forEach((row: any) => {
+    targetData.rows.forEach((row: RowData) => {
       const key = row.wagonNumber || row.id;
       targetRowMap.set(key, row);
     });
@@ -138,7 +135,7 @@ export default function ComparisonModal({
           </div>
 
           <div className="space-y-2">
-            {comparedRows.map((row, index) => (
+            {comparedRows.map((row) => (
               <div
                 key={row.key}
                 className={cn(

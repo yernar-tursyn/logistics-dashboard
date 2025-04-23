@@ -23,20 +23,23 @@ import {
   Pie,
   Cell,
 } from "recharts";
-
-interface ChartViewProps {
-  data: any;
-}
+import type {
+  ChartViewProps,
+  StatusChartData,
+  ColumnChartData,
+  TimeChartData,
+  RowData,
+} from "@/types";
 
 export default function ChartView({ data }: ChartViewProps) {
   const [chartType, setChartType] = useState("status");
   const [timeRange, setTimeRange] = useState("week");
 
-  const getStatusData = () => {
+  const getStatusData = (): StatusChartData[] => {
     const statusCounts: Record<string, number> = {};
 
     Object.keys(data).forEach((columnKey) => {
-      data[columnKey].rows.forEach((row: any) => {
+      data[columnKey as keyof typeof data].rows.forEach((row: RowData) => {
         if (!statusCounts[row.status]) {
           statusCounts[row.status] = 0;
         }
@@ -50,35 +53,34 @@ export default function ChartView({ data }: ChartViewProps) {
     }));
   };
 
-  const getColumnComparisonData = () => {
+  const getColumnComparisonData = (): ColumnChartData[] => {
     return Object.keys(data).map((columnKey) => {
-      const column = data[columnKey];
+      const column = data[columnKey as keyof typeof data];
       const statusCounts: Record<string, number> = {};
 
-      column.rows.forEach((row: any) => {
+      column.rows.forEach((row: RowData) => {
         if (!statusCounts[row.status]) {
           statusCounts[row.status] = 0;
         }
         statusCounts[row.status]++;
       });
 
-      const result: any = {
+      const result: ColumnChartData = {
         name: getColumnName(columnKey),
+        обеспечен: statusCounts["обеспечен"] || 0,
+        необеспечен: statusCounts["не обеспечен, по ограничениям"] || 0,
+        корректировка:
+          (statusCounts["обеспечен с корректировкой"] || 0) +
+          (statusCounts["обеспечен, с корректировкой по ограничениям"] || 0),
       };
-
-      result.обеспечен = statusCounts["обеспечен"] || 0;
-      result.необеспечен = statusCounts["не обеспечен, по ограничениям"] || 0;
-      result.корректировка =
-        (statusCounts["обеспечен с корректировкой"] || 0) +
-        (statusCounts["обеспечен, с корректировкой по ограничениям"] || 0);
 
       return result;
     });
   };
 
-  const getTimeData = () => {
+  const getTimeData = (): TimeChartData[] => {
     const days = timeRange === "week" ? 7 : 30;
-    const result = [];
+    const result: TimeChartData[] = [];
 
     for (let i = 0; i < days; i++) {
       const date = new Date();
@@ -95,7 +97,7 @@ export default function ChartView({ data }: ChartViewProps) {
     return result;
   };
 
-  const getColumnName = (columnKey: string) => {
+  const getColumnName = (columnKey: string): string => {
     switch (columnKey) {
       case "demand":
         return "Спрос";

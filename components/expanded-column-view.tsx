@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Filter, MoreHorizontal, Minimize2, ArrowLeft } from "lucide-react";
+import {
+  Filter,
+  MoreHorizontal,
+  Minimize2,
+  ArrowLeft,
+  Search,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -28,27 +34,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
-
-type ColumnId =
-  | "demand"
-  | "optimizerPlan"
-  | "projectPlan"
-  | "approvedPlan"
-  | "execution";
-
-interface ExpandedColumnViewProps {
-  column: {
-    id: ColumnId;
-    title: string;
-    data: any;
-    color: string;
-  };
-  onClose: () => void;
-  onAcceptItem: (columnId: string, rowId: string, action: string) => void;
-  onAcceptAllPlan: (columnId: string) => void;
-  onViewDetails: (item: any) => void;
-}
+import type { ExpandedColumnViewProps, RowData } from "@/types";
 
 export default function ExpandedColumnView({
   column,
@@ -57,18 +43,7 @@ export default function ExpandedColumnView({
   onAcceptAllPlan,
   onViewDetails,
 }: ExpandedColumnViewProps) {
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    main: true,
-    other: false,
-  });
   const [activeTab, setActiveTab] = useState("list");
-
-  const toggleSection = (section: string) => {
-    setOpenSections((prev) => ({
-      ...prev,
-      [section]: !prev[section],
-    }));
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -94,21 +69,6 @@ export default function ExpandedColumnView({
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
-  };
-
-  const renderActionButtons = () => {
-    if (column.id === "optimizerPlan") {
-      return (
-        <Button
-          size="sm"
-          className="mt-2 w-full bg-[#b1053d] text-white hover:bg-[#c52552]"
-          onClick={() => onAcceptAllPlan(column.id)}
-        >
-          Принять весь план
-        </Button>
-      );
-    }
-    return null;
   };
 
   return (
@@ -215,7 +175,7 @@ export default function ExpandedColumnView({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {column.data.rows.map((row: any, index: number) => (
+              {column.data.rows.map((row: RowData, index: number) => (
                 <TableRow
                   key={index}
                   className="cursor-pointer hover:bg-gray-50"
@@ -270,7 +230,7 @@ export default function ExpandedColumnView({
         <TabsContent value="cards" className="h-full data-[state=active]:block">
           <ScrollArea className="h-full">
             <div className="grid grid-cols-2 gap-4 p-4 md:grid-cols-3 lg:grid-cols-4">
-              {column.data.rows.map((row: any, index: number) => (
+              {column.data.rows.map((row: RowData, index: number) => (
                 <div
                   key={index}
                   className="group cursor-pointer rounded-lg border p-3 transition-all hover:border-[#b1053d] hover:shadow-md"
@@ -347,7 +307,7 @@ export default function ExpandedColumnView({
                       <span>Обеспечено:</span>
                       <span className="font-medium">
                         {
-                          column.data.rows.filter((r: any) =>
+                          column.data.rows.filter((r: RowData) =>
                             r.status.includes("обеспечен")
                           ).length
                         }
@@ -357,7 +317,7 @@ export default function ExpandedColumnView({
                       <span>Не обеспечено:</span>
                       <span className="font-medium">
                         {
-                          column.data.rows.filter((r: any) =>
+                          column.data.rows.filter((r: RowData) =>
                             r.status.includes("не обеспечен")
                           ).length
                         }
@@ -403,7 +363,7 @@ export default function ExpandedColumnView({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {column.data.rows.map((row: any, index: number) => (
+                      {column.data.rows.map((row: RowData, index: number) => (
                         <TableRow key={index}>
                           <TableCell className="font-medium">
                             {row.id || "любой"}

@@ -30,26 +30,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-
-type ColumnId =
-  | "demand"
-  | "optimizerPlan"
-  | "projectPlan"
-  | "approvedPlan"
-  | "execution";
-
-interface ColumnViewProps {
-  column: {
-    id: ColumnId;
-    title: string;
-    data: any;
-    color: string;
-  };
-  onAcceptItem: (columnId: string, rowId: string, action: string) => void;
-  onAcceptAllPlan: (columnId: string) => void;
-  onViewDetails: (item: any) => void;
-  onExpand: (columnId: ColumnId) => void;
-}
+import type { ColumnViewProps, RowData } from "@/types";
 
 export default function ColumnView({
   column,
@@ -191,7 +172,7 @@ export default function ColumnView({
 
             <CollapsibleContent>
               <div className="divide-y">
-                {column.data.rows.map((row: any, index: number) => (
+                {column.data.rows.map((row: RowData, index: number) => (
                   <div
                     key={index}
                     className="group cursor-pointer p-2 hover:bg-gray-50"

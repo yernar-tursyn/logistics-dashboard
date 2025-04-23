@@ -15,14 +15,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Layers, MapPin, Truck, Train, Ship } from "lucide-react";
-
-interface MapViewProps {
-  data: any;
-}
+import type { MapViewProps, RouteData, ColumnId } from "@/types";
 
 export default function MapView({ data }: MapViewProps) {
   const [mapType, setMapType] = useState("routes");
-  const [selectedColumn, setSelectedColumn] = useState("all");
+  const [selectedColumn, setSelectedColumn] = useState<ColumnId | "all">("all");
   const [showLegend, setShowLegend] = useState(true);
 
   const getStatusColor = (status: string) => {
@@ -51,68 +48,86 @@ export default function MapView({ data }: MapViewProps) {
     }
   };
 
-  const getColumnName = (columnKey: string) => {
-    switch (columnKey) {
-      case "demand":
-        return "Спрос";
-      case "optimizerPlan":
-        return "План оптимизатора";
-      case "projectPlan":
-        return "Проект плана";
-      case "approvedPlan":
-        return "Согласованный план";
-      case "execution":
-        return "Факт исполнения";
-      case "all":
-        return "Все колонки";
-      default:
-        return columnKey;
-    }
-  };
+  // Get routes data (simulated)
+  const getRoutesData = (): RouteData[] => {
+    // Создаем маршруты на основе реальных данных
+    const routes: RouteData[] = [];
+    let routeId = 1;
 
-  const getRoutesData = () => {
-    const routes = [
-      {
-        id: 1,
-        from: "Шубарколь",
-        to: "Лужская",
-        status: "обеспечен",
-        wagonCount: 3,
-        distance: 1250,
-      },
-      {
-        id: 2,
-        from: "Магдаля",
-        to: "Шубарколь",
-        status: "не обеспечен, по ограничениям",
-        wagonCount: 2,
-        distance: 850,
-      },
-      {
-        id: 3,
-        from: "Лужская",
-        to: "Магдаля",
-        status: "обеспечен с корректировкой",
-        wagonCount: 1,
-        distance: 1100,
-      },
-      {
-        id: 4,
-        from: "Шубарколь",
-        to: "Магдаля",
-        status: "ПОЗЖЕ",
-        wagonCount: 4,
-        distance: 950,
-      },
-      {
-        id: 5,
-        from: "Магдаля",
-        to: "Лужская",
-        status: "РАВНО",
-        wagonCount: 2,
-        distance: 1300,
-      },
-    ];
+    // Если выбрана конкретная колонка, используем только ее данные
+    if (selectedColumn !== "all") {
+      data[selectedColumn].rows.forEach((row) => {
+        if (row.wagonNumber) {
+          // Генерируем маршрут на основе данных вагона
+          routes.push({
+            id: routeId++,
+            from: "Шубарколь", // Используем фиксированные значения для демонстрации
+            to: "Лужская",
+            status: row.status,
+            wagonCount: 1,
+            distance: 800 + Math.floor(Math.random() * 700), // Случайное расстояние для демонстрации
+          });
+        }
+      });
+    } else {
+      // Если выбраны все колонки, собираем данные из всех колонок
+      Object.keys(data).forEach((columnKey) => {
+        const column = data[columnKey as ColumnId];
+        column.rows.forEach((row) => {
+          if (row.wagonNumber && Math.random() > 0.7) {
+            // Выбираем только часть вагонов для демонстрации
+            routes.push({
+              id: routeId++,
+              from:
+                columnKey === "demand"
+                  ? "Шубарколь"
+                  : columnKey === "optimizerPlan"
+                  ? "Магдаля"
+                  : "Лужская",
+              to:
+                columnKey === "execution"
+                  ? "Лужская"
+                  : columnKey === "approvedPlan"
+                  ? "Шубарколь"
+                  : "Магдаля",
+              status: row.status,
+              wagonCount: 1,
+              distance: 800 + Math.floor(Math.random() * 700),
+            });
+          }
+        });
+      });
+    }
+
+    // Если маршрутов мало, добавляем несколько стандартных
+    if (routes.length < 3) {
+      routes.push(
+        {
+          id: routeId++,
+          from: "Шубарколь",
+          to: "Лужская",
+          status: "обеспечен",
+          wagonCount: 3,
+          distance: 1250,
+        },
+        {
+          id: routeId++,
+          from: "Магдаля",
+          to: "Шубарколь",
+          status: "не обеспечен, по ограничениям",
+          wagonCount: 2,
+          distance: 850,
+        },
+        {
+          id: routeId++,
+          from: "Лужская",
+          to: "Магдаля",
+          status: "обеспечен с корректировкой",
+          wagonCount: 1,
+          distance: 1100,
+        }
+      );
+    }
 
     return routes;
   };
@@ -137,7 +152,12 @@ export default function MapView({ data }: MapViewProps) {
               </SelectContent>
             </Select>
 
-            <Select value={selectedColumn} onValueChange={setSelectedColumn}>
+            <Select
+              value={selectedColumn}
+              onValueChange={(value) =>
+                setSelectedColumn(value as ColumnId | "all")
+              }
+            >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Колонка" />
               </SelectTrigger>

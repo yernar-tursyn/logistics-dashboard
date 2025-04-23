@@ -1,21 +1,4 @@
-type RowData = {
-  id: string;
-  status: string;
-  note: string;
-  wagonNumber: string;
-};
-
-type ColumnData = {
-  rows: RowData[];
-};
-
-type LogisticsData = {
-  demand: ColumnData;
-  optimizerPlan: ColumnData;
-  projectPlan: ColumnData;
-  approvedPlan: ColumnData;
-  execution: ColumnData;
-};
+import type { LogisticsData } from "@/types";
 
 export const mockData: LogisticsData = {
   demand: {
@@ -209,7 +192,7 @@ export const mockData: LogisticsData = {
         wagonNumber: "",
       },
       {
-        id: "��юбой",
+        id: "любой",
         status: "не обеспечен, по ограничениям",
         note: "",
         wagonNumber: "",

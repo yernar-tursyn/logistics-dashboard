@@ -12,35 +12,7 @@ import MapView from "@/components/map-view";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ArrowLeftRight, FileSpreadsheet, BarChart3, Map } from "lucide-react";
-
-type ColumnId =
-  | "demand"
-  | "optimizerPlan"
-  | "projectPlan"
-  | "approvedPlan"
-  | "execution";
-
-type RowData = {
-  id: string;
-  status: string;
-  note: string;
-  wagonNumber: string;
-};
-
-type ColumnData = {
-  rows: RowData[];
-};
-
-type LogisticsData = {
-  [key in ColumnId]: ColumnData;
-};
-
-type ColumnItem = {
-  id: ColumnId;
-  title: string;
-  data: ColumnData;
-  color: string;
-};
+import type { ColumnId, ColumnItem, LogisticsData, RowData } from "@/types";
 
 export default function LogisticsApp() {
   const [data, setData] = useState<LogisticsData>(mockData);
@@ -48,27 +20,27 @@ export default function LogisticsApp() {
   const [showComparison, setShowComparison] = useState(false);
   const [comparisonSource, setComparisonSource] = useState<ColumnId | "">("");
   const [comparisonTarget, setComparisonTarget] = useState<ColumnId | "">("");
-  const [detailedItem, setDetailedItem] = useState<any>(null);
+  const [detailedItem, setDetailedItem] = useState<RowData | null>(null);
   const [expandedColumn, setExpandedColumn] = useState<ColumnId | null>(null);
 
   const handleAcceptItem = (
-    columnId: string,
+    columnId: ColumnId,
     rowId: string,
     action: string
   ) => {
-    const newData = JSON.parse(JSON.stringify(data));
+    const newData = JSON.parse(JSON.stringify(data)) as LogisticsData;
 
     const sourceColumn = columnId;
-    const targetColumn = "projectPlan";
+    const targetColumn = "projectPlan" as ColumnId;
 
     const sourceRow = newData[sourceColumn].rows.find(
-      (row: any) => row.id === rowId
+      (row: RowData) => row.id === rowId
     );
     if (!sourceRow) return;
 
     if (action === "acceptRequest") {
       const targetRowIndex = newData[targetColumn].rows.findIndex(
-        (row: any) => row.id === rowId
+        (row: RowData) => row.id === rowId
       );
 
       if (targetRowIndex >= 0) {
@@ -86,7 +58,7 @@ export default function LogisticsApp() {
       }
     } else if (action === "acceptWagon") {
       const targetRowIndex = newData[targetColumn].rows.findIndex(
-        (row: any) => row.wagonNumber === sourceRow.wagonNumber
+        (row: RowData) => row.wagonNumber === sourceRow.wagonNumber
       );
 
       if (targetRowIndex >= 0) {
@@ -107,17 +79,19 @@ export default function LogisticsApp() {
     setData(newData);
   };
 
-  const handleAcceptAllPlan = (columnId: string) => {
-    const newData = JSON.parse(JSON.stringify(data));
+  const handleAcceptAllPlan = (columnId: ColumnId) => {
+    const newData = JSON.parse(JSON.stringify(data)) as LogisticsData;
 
     const sourceColumn = columnId;
-    const targetColumn = "projectPlan";
+    const targetColumn = "projectPlan" as ColumnId;
 
-    newData[targetColumn].rows = newData[sourceColumn].rows.map((row: any) => ({
-      ...row,
-      status: row.status.includes("обеспечен") ? "выгрузка +3" : row.status,
-      note: "принят",
-    }));
+    newData[targetColumn].rows = newData[sourceColumn].rows.map(
+      (row: RowData) => ({
+        ...row,
+        status: row.status.includes("обеспечен") ? "выгрузка +3" : row.status,
+        note: "принят",
+      })
+    );
 
     setData(newData);
   };
@@ -128,7 +102,7 @@ export default function LogisticsApp() {
     setShowComparison(true);
   };
 
-  const handleViewDetails = (item: any) => {
+  const handleViewDetails = (item: RowData) => {
     setDetailedItem(item);
   };
 
