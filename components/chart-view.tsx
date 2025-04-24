@@ -262,7 +262,7 @@ export default function ChartView({ data }: ChartViewProps) {
                 <PieChart>
                   <Pie
                     activeIndex={activeIndex}
-                    // @ts-expect-error
+                    // @ts-expect-error: Recharts не имеет точной типизации для activeShape
                     activeShape={renderActiveShape}
                     data={statusData}
                     cx="50%"
