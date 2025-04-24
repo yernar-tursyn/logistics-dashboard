@@ -25,55 +25,55 @@ export default function LogisticsApp() {
 
   const handleAcceptItem = (
     columnId: ColumnId,
-    rowId: string,
+    rowIndexStr: string,
     action: string
   ) => {
     const newData = JSON.parse(JSON.stringify(data)) as LogisticsData;
 
-    const sourceColumn = columnId;
+    const rowIndex = Number.parseInt(rowIndexStr, 10);
+
+    if (
+      isNaN(rowIndex) ||
+      rowIndex < 0 ||
+      rowIndex >= newData[columnId].rows.length
+    ) {
+      console.error("Invalid row index:", rowIndex, "for column", columnId);
+      return;
+    }
+
+    const sourceRow = newData[columnId].rows[rowIndex];
+    console.log(`Found source row at index ${rowIndex}:`, sourceRow);
+
+    const newRow = {
+      ...sourceRow,
+      status: action === "acceptRequest" ? sourceRow.status : "выгрузка +3",
+      note: "принят",
+    };
+
     const targetColumn = "projectPlan" as ColumnId;
 
-    const sourceRow = newData[sourceColumn].rows.find(
-      (row: RowData) => row.id === rowId
+    const existingRowIndex = newData[targetColumn].rows.findIndex(
+      (row: RowData) =>
+        row.id === sourceRow.id && row.wagonNumber === sourceRow.wagonNumber
     );
-    if (!sourceRow) return;
 
-    if (action === "acceptRequest") {
-      const targetRowIndex = newData[targetColumn].rows.findIndex(
-        (row: RowData) => row.id === rowId
+    if (existingRowIndex >= 0) {
+      console.log(
+        `Updating existing row at index ${existingRowIndex} in ${targetColumn}`
       );
+      newData[targetColumn].rows[existingRowIndex] = newRow;
+    } else {
+      console.log(`Inserting new row at index ${rowIndex} in ${targetColumn}`);
 
-      if (targetRowIndex >= 0) {
-        newData[targetColumn].rows[targetRowIndex] = {
-          ...sourceRow,
-          status: sourceRow.status,
-          note: "принят",
-        };
-      } else {
-        newData[targetColumn].rows.push({
-          ...sourceRow,
-          status: sourceRow.status,
-          note: "принят",
-        });
-      }
-    } else if (action === "acceptWagon") {
-      const targetRowIndex = newData[targetColumn].rows.findIndex(
-        (row: RowData) => row.wagonNumber === sourceRow.wagonNumber
-      );
+      const targetRows = [...newData[targetColumn].rows];
 
-      if (targetRowIndex >= 0) {
-        newData[targetColumn].rows[targetRowIndex] = {
-          ...sourceRow,
-          status: "выгрузка +3",
-          note: "принят",
-        };
+      if (rowIndex < targetRows.length) {
+        targetRows.splice(rowIndex, 0, newRow);
       } else {
-        newData[targetColumn].rows.push({
-          ...sourceRow,
-          status: "выгрузка +3",
-          note: "принят",
-        });
+        targetRows.push(newRow);
       }
+
+      newData[targetColumn].rows = targetRows;
     }
 
     setData(newData);
@@ -85,13 +85,13 @@ export default function LogisticsApp() {
     const sourceColumn = columnId;
     const targetColumn = "projectPlan" as ColumnId;
 
-    newData[targetColumn].rows = newData[sourceColumn].rows.map(
-      (row: RowData) => ({
-        ...row,
-        status: row.status.includes("обеспечен") ? "выгрузка +3" : row.status,
-        note: "принят",
-      })
-    );
+    const newRows = newData[sourceColumn].rows.map((row: RowData) => ({
+      ...row,
+      status: row.status.includes("обеспечен") ? "выгрузка +3" : row.status,
+      note: "принят",
+    }));
+
+    newData[targetColumn].rows = newRows;
 
     setData(newData);
   };

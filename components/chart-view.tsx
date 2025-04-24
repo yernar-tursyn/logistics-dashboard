@@ -22,6 +22,7 @@ import {
   PieChart,
   Pie,
   Cell,
+  Sector,
 } from "recharts";
 import type {
   ChartViewProps,
@@ -30,10 +31,28 @@ import type {
   TimeChartData,
   RowData,
 } from "@/types";
+import type React from "react";
+
+interface PieSectorProps {
+  cx: number;
+  cy: number;
+  innerRadius: number;
+  outerRadius: number;
+  startAngle: number;
+  endAngle: number;
+  fill: string;
+  payload: {
+    name: string;
+    value: number;
+  };
+  percent: number;
+  value: number;
+}
 
 export default function ChartView({ data }: ChartViewProps) {
   const [chartType, setChartType] = useState("status");
   const [timeRange, setTimeRange] = useState("week");
+  const [activeIndex, setActiveIndex] = useState(-1);
 
   const getStatusData = (): StatusChartData[] => {
     const statusCounts: Record<string, number> = {};
@@ -114,6 +133,67 @@ export default function ChartView({ data }: ChartViewProps) {
     }
   };
 
+  const shortenStatusName = (name: string): string => {
+    const map: Record<string, string> = {
+      "обеспечен, с корректировкой по ограничениям": "обеспечен с корр.",
+      "не обеспечен, по ограничениям": "не обеспечен",
+      "выгрузка +3, плановая": "выгрузка +3",
+      "обеспечен с корректировкой": "обеспечен с корр.",
+      "обеспечен 3 из 10": "обеспечен 3/10",
+    };
+    return map[name] || name;
+  };
+
+  const renderActiveShape = (props: PieSectorProps) => {
+    const {
+      cx,
+      cy,
+      innerRadius,
+      outerRadius,
+      startAngle,
+      endAngle,
+      fill,
+      payload,
+      percent,
+      value,
+    } = props;
+
+    return (
+      <g>
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={innerRadius}
+          outerRadius={outerRadius + 10}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={fill}
+        />
+        <text
+          x={cx}
+          y={cy - 15}
+          dy={8}
+          textAnchor="middle"
+          fill="#333"
+          fontSize={14}
+          fontWeight="bold"
+        >
+          {shortenStatusName(payload.name)}
+        </text>
+        <text
+          x={cx}
+          y={cy + 15}
+          dy={8}
+          textAnchor="middle"
+          fill="#333"
+          fontSize={14}
+        >
+          {`${value} (${(percent * 100).toFixed(0)}%)`}
+        </text>
+      </g>
+    );
+  };
+
   const COLORS = [
     "#0088FE",
     "#00C49F",
@@ -129,6 +209,14 @@ export default function ChartView({ data }: ChartViewProps) {
   const columnData = getColumnComparisonData();
   const timeData = getTimeData();
 
+  const onPieEnter = (_: React.MouseEvent<SVGElement>, index: number) => {
+    setActiveIndex(index);
+  };
+
+  const onPieLeave = () => {
+    setActiveIndex(-1);
+  };
+
   return (
     <div className="h-full p-4">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -136,7 +224,7 @@ export default function ChartView({ data }: ChartViewProps) {
 
         <div className="flex gap-2">
           <Select value={chartType} onValueChange={setChartType}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-auto min-w-[180px]">
               <SelectValue placeholder="Тип графика" />
             </SelectTrigger>
             <SelectContent>
@@ -148,7 +236,7 @@ export default function ChartView({ data }: ChartViewProps) {
 
           {chartType === "time" && (
             <Select value={timeRange} onValueChange={setTimeRange}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-auto min-w-[120px]">
                 <SelectValue placeholder="Период" />
               </SelectTrigger>
               <SelectContent>
@@ -160,29 +248,39 @@ export default function ChartView({ data }: ChartViewProps) {
         </div>
       </div>
 
-      <div className="grid h-[calc(100%-3rem)] gap-4 lg:grid-cols-2">
-        <Card className="p-4">
-          <h3 className="mb-4 text-lg font-medium">
+      <div className="grid h-[calc(100%-3rem)] gap-3 lg:grid-cols-2">
+        <Card className="p-3 overflow-hidden flex flex-col">
+          <h3 className="mb-2 text-lg font-medium">
             {chartType === "status" && "Распределение статусов"}
             {chartType === "columns" && "Сравнение колонок"}
             {chartType === "time" && "Временная динамика"}
           </h3>
 
-          <div className="h-[calc(100%-2rem)]">
+          <div className="flex-1 min-h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               {chartType === "status" ? (
                 <PieChart>
                   <Pie
+                    activeIndex={activeIndex}
+                    // @ts-expect-error
+                    activeShape={renderActiveShape}
                     data={statusData}
                     cx="50%"
                     cy="50%"
-                    labelLine={true}
-                    label={({ name, percent }) =>
-                      `${name}: ${(percent * 100).toFixed(0)}%`
-                    }
+                    innerRadius={60}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
+                    onMouseEnter={onPieEnter}
+                    onMouseLeave={onPieLeave}
+                    label={({ name, percent }) =>
+                      activeIndex === -1
+                        ? `${shortenStatusName(name)}: ${(
+                            percent * 100
+                          ).toFixed(0)}%`
+                        : ""
+                    }
+                    labelLine={activeIndex === -1}
                   >
                     {statusData.map((entry, index) => (
                       <Cell
@@ -191,8 +289,13 @@ export default function ChartView({ data }: ChartViewProps) {
                       />
                     ))}
                   </Pie>
-                  <Tooltip />
-                  <Legend />
+                  <Tooltip
+                    formatter={(value, name) => [
+                      value,
+                      shortenStatusName(name as string),
+                    ]}
+                  />
+                  <Legend formatter={(value) => shortenStatusName(value)} />
                 </PieChart>
               ) : chartType === "columns" ? (
                 <BarChart
@@ -237,9 +340,9 @@ export default function ChartView({ data }: ChartViewProps) {
           </div>
         </Card>
 
-        <Card className="p-4">
-          <Tabs defaultValue="status">
-            <div className="mb-4 flex items-center justify-between">
+        <Card className="p-3 overflow-hidden flex flex-col">
+          <Tabs defaultValue="status" className="flex-1 flex flex-col">
+            <div className="mb-2 flex items-center justify-between">
               <h3 className="text-lg font-medium">Дополнительная аналитика</h3>
               <TabsList>
                 <TabsTrigger value="status">Статусы</TabsTrigger>
@@ -247,11 +350,14 @@ export default function ChartView({ data }: ChartViewProps) {
               </TabsList>
             </div>
 
-            <TabsContent value="status" className="h-[calc(100%-3rem)]">
+            <TabsContent value="status" className="flex-1 min-h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   layout="vertical"
-                  data={statusData}
+                  data={statusData.map((item) => ({
+                    ...item,
+                    name: shortenStatusName(item.name),
+                  }))}
                   margin={{
                     top: 5,
                     right: 30,
@@ -261,7 +367,7 @@ export default function ChartView({ data }: ChartViewProps) {
                 >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis type="number" />
-                  <YAxis type="category" dataKey="name" />
+                  <YAxis type="category" dataKey="name" width={100} />
                   <Tooltip />
                   <Legend />
                   <Bar dataKey="value" fill="#b1053d" />
@@ -269,7 +375,7 @@ export default function ChartView({ data }: ChartViewProps) {
               </ResponsiveContainer>
             </TabsContent>
 
-            <TabsContent value="wagons" className="h-[calc(100%-3rem)]">
+            <TabsContent value="wagons" className="flex-1 min-h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -285,6 +391,7 @@ export default function ChartView({ data }: ChartViewProps) {
                     label={({ name, percent }) =>
                       `${name}: ${(percent * 100).toFixed(0)}%`
                     }
+                    innerRadius={60}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"

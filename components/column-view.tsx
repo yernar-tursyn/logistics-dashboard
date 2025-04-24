@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import type React from "react";
+
+import { useState, useId } from "react";
 import {
   ChevronDown,
   ChevronUp,
@@ -43,6 +45,12 @@ export default function ColumnView({
     main: true,
     other: false,
   });
+
+  const componentId = useId();
+
+  const getRowKey = (row: RowData, index: number) => {
+    return `${componentId}_${column.id}_${row.id}_${index}`;
+  };
 
   const toggleSection = (section: string) => {
     setOpenSections((prev) => ({
@@ -90,6 +98,23 @@ export default function ColumnView({
       );
     }
     return null;
+  };
+
+  const handleAcceptClick = (
+    e: React.MouseEvent,
+    row: RowData,
+    index: number,
+    action: string
+  ) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    const rowKey = getRowKey(row, index);
+
+    console.log(`Accepting ${action} for row:`, row);
+    console.log(`Row index: ${index}, Row key: ${rowKey}`);
+
+    onAcceptItem(column.id, index.toString(), action);
   };
 
   return (
@@ -152,8 +177,8 @@ export default function ColumnView({
         </div>
       </div>
 
-      <ScrollArea className="h-[calc(100vh-12rem)]">
-        <div className="p-2">
+      <ScrollArea className="h-[calc(100vh-13rem)] overflow-hidden">
+        <div className="p-1.5">
           <Collapsible
             open={openSections.main}
             onOpenChange={() => toggleSection("main")}
@@ -172,64 +197,72 @@ export default function ColumnView({
 
             <CollapsibleContent>
               <div className="divide-y">
-                {column.data.rows.map((row: RowData, index: number) => (
-                  <div
-                    key={index}
-                    className="group cursor-pointer p-2 hover:bg-gray-50"
-                    onClick={() => onViewDetails(row)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="font-medium">{row.id || "любой"}</div>
-                      {row.wagonNumber && (
-                        <div className="text-xs text-gray-500">
-                          № вагона: {row.wagonNumber}
+                {column.data.rows.map((row: RowData, index: number) => {
+                  const rowKey = getRowKey(row, index);
+
+                  return (
+                    <div
+                      key={rowKey}
+                      className="group cursor-pointer p-1.5 hover:bg-gray-50"
+                      onClick={() => onViewDetails(row)}
+                      data-row-index={index}
+                      data-row-key={rowKey}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="font-medium">{row.id}</div>
+                        {row.wagonNumber && (
+                          <div className="text-xs text-gray-500">
+                            № вагона: {row.wagonNumber}
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-1 flex items-center gap-2">
+                        <Badge
+                          className={cn(
+                            "font-normal",
+                            getStatusColor(row.status)
+                          )}
+                        >
+                          {row.status}
+                        </Badge>
+                        {row.note && (
+                          <span className="text-xs text-gray-500">
+                            {row.note}
+                          </span>
+                        )}
+                      </div>
+
+                      {column.id === "optimizerPlan" && (
+                        <div className="mt-2 hidden gap-1 group-hover:flex">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 flex-1 text-xs text-[#b1053d] hover:bg-[#b1053d]/10 hover:text-[#b1053d]"
+                            onClick={(e) =>
+                              handleAcceptClick(e, row, index, "acceptRequest")
+                            }
+                            data-row-index={index}
+                            data-row-key={rowKey}
+                          >
+                            Принять заявку
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 flex-1 text-xs text-[#b1053d] hover:bg-[#b1053d]/10 hover:text-[#b1053d]"
+                            onClick={(e) =>
+                              handleAcceptClick(e, row, index, "acceptWagon")
+                            }
+                            data-row-index={index}
+                            data-row-key={rowKey}
+                          >
+                            Принять вагон
+                          </Button>
                         </div>
                       )}
                     </div>
-                    <div className="mt-1 flex items-center gap-2">
-                      <Badge
-                        className={cn(
-                          "font-normal",
-                          getStatusColor(row.status)
-                        )}
-                      >
-                        {row.status}
-                      </Badge>
-                      {row.note && (
-                        <span className="text-xs text-gray-500">
-                          {row.note}
-                        </span>
-                      )}
-                    </div>
-
-                    {column.id === "optimizerPlan" && (
-                      <div className="mt-2 hidden gap-1 group-hover:flex">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 flex-1 text-xs text-[#b1053d] hover:bg-[#b1053d]/10 hover:text-[#b1053d]"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onAcceptItem(column.id, row.id, "acceptRequest");
-                          }}
-                        >
-                          Принять заявку
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 flex-1 text-xs text-[#b1053d] hover:bg-[#b1053d]/10 hover:text-[#b1053d]"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onAcceptItem(column.id, row.id, "acceptWagon");
-                          }}
-                        >
-                          Принять вагон
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </CollapsibleContent>
           </Collapsible>
