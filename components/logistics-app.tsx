@@ -1,7 +1,5 @@
 "use client";
 
-import type React from "react";
-
 import { useState, useRef } from "react";
 import { mockData } from "@/lib/mock-data";
 import AppHeader from "@/components/app-header";
@@ -21,6 +19,7 @@ import {
   Minimize2,
 } from "lucide-react";
 import type { ColumnId, ColumnItem, LogisticsData, RowData } from "@/types";
+import UnifiedTableView from "@/components/unified-table-view";
 
 export default function LogisticsApp() {
   const [data, setData] = useState<LogisticsData>(mockData);
@@ -44,32 +43,30 @@ export default function LogisticsApp() {
 
   const columnContentRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  const [isScrolling, setIsScrolling] = useState(false);
-
   const registerColumnContentRef = (id: string, ref: HTMLDivElement | null) => {
     columnContentRefs.current[id] = ref;
   };
 
-  const syncScroll = (scrollTop: number) => {
-    if (isScrolling) return;
+  // const syncScroll = (scrollTop: number) => {
+  //   if (isScrolling) return
 
-    setIsScrolling(true);
+  //   setIsScrolling(true)
 
-    Object.values(columnContentRefs.current).forEach((ref) => {
-      if (ref) {
-        ref.scrollTop = scrollTop;
-      }
-    });
+  //   Object.values(columnContentRefs.current).forEach((ref) => {
+  //     if (ref) {
+  //       ref.scrollTop = scrollTop
+  //     }
+  //   })
 
-    setTimeout(() => {
-      setIsScrolling(false);
-    }, 50);
-  };
+  //   setTimeout(() => {
+  //     setIsScrolling(false)
+  //   }, 50)
+  // }
 
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const scrollTop = e.currentTarget.scrollTop;
-    syncScroll(scrollTop);
-  };
+  // const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+  //   const scrollTop = e.currentTarget.scrollTop
+  //   syncScroll(scrollTop)
+  // }
 
   const handleAcceptItem = (
     columnId: ColumnId,
@@ -270,6 +267,13 @@ export default function LogisticsApp() {
                   <FileSpreadsheet size={16} />
                   <span className="hidden sm:inline">Колонки</span>
                 </TabsTrigger>
+                <TabsTrigger
+                  value="unified"
+                  className="flex items-center gap-1"
+                >
+                  <FileSpreadsheet size={16} />
+                  <span className="hidden sm:inline">Единая таблица</span>
+                </TabsTrigger>
                 <TabsTrigger value="charts" className="flex items-center gap-1">
                   <BarChart3 size={16} />
                   <span className="hidden sm:inline">Графики</span>
@@ -288,7 +292,6 @@ export default function LogisticsApp() {
               <div
                 className="flex h-full overflow-y-auto overflow-x-auto p-0 m-0"
                 ref={columnsContainerRef}
-                onScroll={handleScroll}
                 style={{ scrollbarGutter: "stable" }}
               >
                 {columns.map((column) => {
@@ -328,6 +331,19 @@ export default function LogisticsApp() {
                   );
                 })}
               </div>
+            </TabsContent>
+
+            <TabsContent
+              value="unified"
+              className="h-[calc(100%-48px)] data-[state=active]:block"
+            >
+              <UnifiedTableView
+                data={data}
+                columns={columns}
+                onAcceptItem={handleAcceptItem}
+                onAcceptAllPlan={handleAcceptAllPlan}
+                onViewDetails={handleViewDetails}
+              />
             </TabsContent>
 
             <TabsContent value="charts" className="h-[calc(100%-48px)]">
