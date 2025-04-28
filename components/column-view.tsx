@@ -38,8 +38,6 @@ import {
 import type {
   ColumnViewProps,
   RowData,
-  ColumnItem,
-  ColumnId,
   LogisticsData,
 } from "@/types";
 import { getDetailedData } from "@/lib/detailed-data";
@@ -80,16 +78,6 @@ type DetailedRowData = {
   day2: number;
   day3: number;
 };
-
-interface ColumnViewComponentProps {
-  column: ColumnItem;
-  onAcceptItem: (columnId: ColumnId, rowId: string, action: string) => void;
-  onAcceptAllPlan: (columnId: ColumnId) => void;
-  onViewDetails: (item: RowData) => void;
-  onExpand: (columnId: ColumnId) => void;
-  isExpanded?: boolean;
-  registerContentRef?: (id: string, ref: HTMLDivElement | null) => void;
-}
 
 export default function ColumnView({
   column,
@@ -260,7 +248,7 @@ export default function ColumnView({
 
     const lowerSearchTerm = searchTerm.toLowerCase();
     return unifiedRows.filter((row) => {
-      return Object.entries(row).some(([key, value]) => {
+      return Object.entries(row).some(([, value]) => {
         if (typeof value === "string") {
           return value.toLowerCase().includes(lowerSearchTerm);
         }
@@ -525,7 +513,7 @@ export default function ColumnView({
       filteredData = filteredData.filter((row) => {
         if (!row.id) return false;
 
-        return Object.entries(row).some(([key, value]) => {
+        return Object.entries(row).some(([, value]) => {
           if (typeof value === "string") {
             return value.toLowerCase().includes(lowerSearchTerm);
           }
