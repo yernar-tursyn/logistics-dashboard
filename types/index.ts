@@ -27,6 +27,38 @@ export type ColumnItem = {
   color: string;
 };
 
+export type DetailedRowData = RowData & {
+  carType: string;
+  client: string;
+  manager: string;
+  shipper: string;
+  cargo: string;
+  weight: number;
+  requestedCars: number;
+  mandatory: boolean;
+  departureStation: string;
+  destinationStation: string;
+  returnStation: string;
+  calculatedTurnover: number;
+  approach: number;
+  loading: number;
+  loadedRun: number;
+  unloading: number;
+  return: number;
+  carDays: number;
+  clientRate: string;
+  emptyTariff: string;
+  loadedTariff: string;
+  provisionIncome: string;
+  dailyProfitability: string;
+  totalAmount: string;
+  deadEndPerDay: string;
+  supply: string;
+  day1: number;
+  day2: number;
+  day3: number;
+};
+
 export interface ComparisonModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -50,6 +82,9 @@ export interface ColumnViewProps {
   onAcceptAllPlan: (columnId: ColumnId) => void;
   onViewDetails: (item: RowData) => void;
   onExpand: (columnId: ColumnId) => void;
+  isExpanded?: boolean;
+  registerContentRef?: (id: string, ref: HTMLDivElement | null) => void;
+  allColumnsData?: LogisticsData;
 }
 
 export interface ExpandedColumnViewProps {

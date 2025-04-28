@@ -1,17 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import type React from "react";
+
+import { useState, useRef } from "react";
 import { mockData } from "@/lib/mock-data";
 import AppHeader from "@/components/app-header";
 import ColumnView from "@/components/column-view";
 import ComparisonModal from "@/components/comparison-modal";
 import DetailedView from "@/components/detailed-view";
-import ExpandedColumnView from "@/components/expanded-column-view";
 import ChartView from "@/components/chart-view";
 import MapView from "@/components/map-view";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ArrowLeftRight, FileSpreadsheet, BarChart3, Map } from "lucide-react";
+import {
+  ArrowLeftRight,
+  FileSpreadsheet,
+  BarChart3,
+  Map,
+  Maximize2,
+  Minimize2,
+} from "lucide-react";
 import type { ColumnId, ColumnItem, LogisticsData, RowData } from "@/types";
 
 export default function LogisticsApp() {
@@ -21,7 +29,47 @@ export default function LogisticsApp() {
   const [comparisonSource, setComparisonSource] = useState<ColumnId | "">("");
   const [comparisonTarget, setComparisonTarget] = useState<ColumnId | "">("");
   const [detailedItem, setDetailedItem] = useState<RowData | null>(null);
-  const [expandedColumn, setExpandedColumn] = useState<ColumnId | null>(null);
+
+  const [expandedColumns, setExpandedColumns] = useState<
+    Record<ColumnId, boolean>
+  >({
+    demand: false,
+    optimizerPlan: false,
+    projectPlan: false,
+    approvedPlan: false,
+    execution: false,
+  });
+
+  const columnsContainerRef = useRef<HTMLDivElement>(null);
+
+  const columnContentRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  const [isScrolling, setIsScrolling] = useState(false);
+
+  const registerColumnContentRef = (id: string, ref: HTMLDivElement | null) => {
+    columnContentRefs.current[id] = ref;
+  };
+
+  const syncScroll = (scrollTop: number) => {
+    if (isScrolling) return;
+
+    setIsScrolling(true);
+
+    Object.values(columnContentRefs.current).forEach((ref) => {
+      if (ref) {
+        ref.scrollTop = scrollTop;
+      }
+    });
+
+    setTimeout(() => {
+      setIsScrolling(false);
+    }, 50);
+  };
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const scrollTop = e.currentTarget.scrollTop;
+    syncScroll(scrollTop);
+  };
 
   const handleAcceptItem = (
     columnId: ColumnId,
@@ -107,8 +155,30 @@ export default function LogisticsApp() {
   };
 
   const handleExpandColumn = (columnId: ColumnId) => {
-    setExpandedColumn(columnId === expandedColumn ? null : columnId);
+    setExpandedColumns((prev) => ({
+      ...prev,
+      [columnId]: !prev[columnId],
+    }));
   };
+
+  const handleExpandAllColumns = (expand: boolean) => {
+    const newState: Record<ColumnId, boolean> = {
+      demand: expand,
+      optimizerPlan: expand,
+      projectPlan: expand,
+      approvedPlan: expand,
+      execution: expand,
+    };
+    setExpandedColumns(newState);
+  };
+
+  const areAllColumnsExpanded = Object.values(expandedColumns).every(
+    (expanded) => expanded
+  );
+
+  const hasExpandedColumns = Object.values(expandedColumns).some(
+    (expanded) => expanded
+  );
 
   const columns: ColumnItem[] = [
     { id: "demand", title: "Спрос", data: data.demand, color: "bg-blue-500" },
@@ -162,6 +232,26 @@ export default function LogisticsApp() {
               <ArrowLeftRight size={16} />
               <span className="hidden sm:inline">Сравнить планы</span>
             </Button>
+
+            {activeView === "columns" && (
+              <Button
+                variant="outline"
+                className="flex items-center gap-2"
+                onClick={() => handleExpandAllColumns(!areAllColumnsExpanded)}
+              >
+                {areAllColumnsExpanded ? (
+                  <>
+                    <Minimize2 size={16} />
+                    <span className="hidden sm:inline">Свернуть все</span>
+                  </>
+                ) : (
+                  <>
+                    <Maximize2 size={16} />
+                    <span className="hidden sm:inline">Развернуть все</span>
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -195,28 +285,49 @@ export default function LogisticsApp() {
               value="columns"
               className="h-[calc(100%-48px)] data-[state=active]:block"
             >
-              {expandedColumn ? (
-                <ExpandedColumnView
-                  column={columns.find((c) => c.id === expandedColumn)!}
-                  onClose={() => setExpandedColumn(null)}
-                  onAcceptItem={handleAcceptItem}
-                  onAcceptAllPlan={handleAcceptAllPlan}
-                  onViewDetails={handleViewDetails}
-                />
-              ) : (
-                <div className="flex h-full overflow-hidden">
-                  {columns.map((column) => (
-                    <ColumnView
+              <div
+                className="flex h-full overflow-y-auto overflow-x-auto p-0 m-0"
+                ref={columnsContainerRef}
+                onScroll={handleScroll}
+                style={{ scrollbarGutter: "stable" }}
+              >
+                {columns.map((column) => {
+                  const isExpanded = expandedColumns[column.id];
+
+                  const columnWidth = isExpanded
+                    ? "3500px"
+                    : hasExpandedColumns
+                    ? "200px"
+                    : `${100 / columns.length}%`;
+
+                  return (
+                    <div
                       key={column.id}
-                      column={column}
-                      onAcceptItem={handleAcceptItem}
-                      onAcceptAllPlan={handleAcceptAllPlan}
-                      onViewDetails={handleViewDetails}
-                      onExpand={handleExpandColumn}
-                    />
-                  ))}
-                </div>
-              )}
+                      className="transition-all duration-300 h-full"
+                      style={{
+                        width: columnWidth,
+                        minWidth: isExpanded ? "3500px" : "200px",
+                        flex: isExpanded
+                          ? "0 0 auto"
+                          : hasExpandedColumns
+                          ? "0 0 auto"
+                          : "1",
+                      }}
+                    >
+                      <ColumnView
+                        column={column}
+                        onAcceptItem={handleAcceptItem}
+                        onAcceptAllPlan={handleAcceptAllPlan}
+                        onViewDetails={handleViewDetails}
+                        onExpand={handleExpandColumn}
+                        isExpanded={isExpanded}
+                        allColumnsData={data}
+                        registerContentRef={registerColumnContentRef}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </TabsContent>
 
             <TabsContent value="charts" className="h-[calc(100%-48px)]">

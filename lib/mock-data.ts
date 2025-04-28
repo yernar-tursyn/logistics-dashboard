@@ -133,6 +133,12 @@ export const mockData: LogisticsData = {
         note: "",
         wagonNumber: "",
       },
+      {
+        id: "Заявка №132",
+        status: "не обеспечен, по ограничениям",
+        note: "",
+        wagonNumber: "",
+      },
     ],
   },
   projectPlan: {
@@ -188,7 +194,13 @@ export const mockData: LogisticsData = {
       },
       {
         id: "Заявка №131",
-        status: "не обеспечен, по ограничен��ям",
+        status: "не обеспечен, по ограничениям",
+        note: "",
+        wagonNumber: "",
+      },
+      {
+        id: "Заявка №132",
+        status: "не обеспечен, по ограничениям",
         note: "",
         wagonNumber: "",
       },
@@ -231,6 +243,18 @@ export const mockData: LogisticsData = {
       { id: "Заявка №129", status: "обеспечен", note: "", wagonNumber: "" },
       {
         id: "Заявка №130",
+        status: "не обеспечен, по ограничениям",
+        note: "",
+        wagonNumber: "",
+      },
+      {
+        id: "Заявка №131",
+        status: "не обеспечен, по ограничениям",
+        note: "",
+        wagonNumber: "",
+      },
+      {
+        id: "Заявка №132",
         status: "не обеспечен, по ограничениям",
         note: "",
         wagonNumber: "",
@@ -280,6 +304,12 @@ export const mockData: LogisticsData = {
       },
       {
         id: "Заявка №131",
+        status: "не обеспечен, по ограничениям",
+        note: "",
+        wagonNumber: "",
+      },
+      {
+        id: "Заявка №132",
         status: "не обеспечен, по ограничениям",
         note: "",
         wagonNumber: "",
