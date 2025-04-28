@@ -35,7 +35,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { ColumnViewProps, RowData, LogisticsData } from "@/types";
+import type {
+  ColumnViewProps,
+  RowData,
+  ColumnItem,
+  ColumnId,
+  LogisticsData,
+} from "@/types";
 import { getDetailedData } from "@/lib/detailed-data";
 import { Input } from "@/components/ui/input";
 
@@ -74,6 +80,16 @@ type DetailedRowData = {
   day2: number;
   day3: number;
 };
+
+interface ColumnViewComponentProps {
+  column: ColumnItem;
+  onAcceptItem: (columnId: ColumnId, rowId: string, action: string) => void;
+  onAcceptAllPlan: (columnId: ColumnId) => void;
+  onViewDetails: (item: RowData) => void;
+  onExpand: (columnId: ColumnId) => void;
+  isExpanded?: boolean;
+  registerContentRef?: (id: string, ref: HTMLDivElement | null) => void;
+}
 
 export default function ColumnView({
   column,
@@ -244,7 +260,7 @@ export default function ColumnView({
 
     const lowerSearchTerm = searchTerm.toLowerCase();
     return unifiedRows.filter((row) => {
-      return Object.values(row).some((value) => {
+      return Object.entries(row).some(([key, value]) => {
         if (typeof value === "string") {
           return value.toLowerCase().includes(lowerSearchTerm);
         }
@@ -296,7 +312,7 @@ export default function ColumnView({
                   return (
                     <div
                       key={rowKey}
-                      className="group cursor-pointer p-1.5 hover:bg-gray-50 h-[100px] flex flex-col justify-between relative"
+                      className="group cursor-pointer p-1.5 hover:bg-gray-50 h-28 flex flex-col justify-between transition-all"
                       onClick={() => {
                         if (row.status) {
                           onViewDetails(row);
@@ -335,31 +351,38 @@ export default function ColumnView({
                       )}
 
                       {column.id === "optimizerPlan" && row.status && (
-                        <div className="absolute bottom-1.5 left-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 flex-1 text-xs text-[#b1053d] hover:bg-[#b1053d]/10 hover:text-[#b1053d]"
-                            onClick={(e) =>
-                              handleAcceptClick(e, row, index, "acceptRequest")
-                            }
-                            data-row-index={index}
-                            data-row-key={rowKey}
-                          >
-                            Принять заявку
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 flex-1 text-xs text-[#b1053d] hover:bg-[#b1053d]/10 hover:text-[#b1053d]"
-                            onClick={(e) =>
-                              handleAcceptClick(e, row, index, "acceptWagon")
-                            }
-                            data-row-index={index}
-                            data-row-key={rowKey}
-                          >
-                            Принять вагон
-                          </Button>
+                        <div className="mt-2 flex-grow flex flex-col">
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 mt-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 flex-1 text-xs text-[#b1053d] hover:bg-[#b1053d]/10 hover:text-[#b1053d]"
+                              onClick={(e) =>
+                                handleAcceptClick(
+                                  e,
+                                  row,
+                                  index,
+                                  "acceptRequest"
+                                )
+                              }
+                              data-row-index={index}
+                              data-row-key={rowKey}
+                            >
+                              Принять заявку
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 flex-1 text-xs text-[#b1053d] hover:bg-[#b1053d]/10 hover:text-[#b1053d]"
+                              onClick={(e) =>
+                                handleAcceptClick(e, row, index, "acceptWagon")
+                              }
+                              data-row-index={index}
+                              data-row-key={rowKey}
+                            >
+                              Принять вагон
+                            </Button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -502,7 +525,7 @@ export default function ColumnView({
       filteredData = filteredData.filter((row) => {
         if (!row.id) return false;
 
-        return Object.values(row).some((value) => {
+        return Object.entries(row).some(([key, value]) => {
           if (typeof value === "string") {
             return value.toLowerCase().includes(lowerSearchTerm);
           }
