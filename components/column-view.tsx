@@ -706,7 +706,7 @@ export default function ColumnView({
                 onClick={() => requestSort("carDays")}
               >
                 <div className="flex items-center">
-                  Ваго��осутки {getSortIcon("carDays")}
+                  Вагоносутки {getSortIcon("carDays")}
                 </div>
               </th>
               <th
